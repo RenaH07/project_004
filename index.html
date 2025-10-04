@@ -27,10 +27,15 @@
 <body>
 
   <!-- Netlify Forms が投稿先を認識するための隠しフォーム（必須） -->
-  <form name="experiment-data" method="POST" data-netlify="true" netlify netlify-honeypot="bot-field" hidden>
-    <input type="text" name="data">
-    <input type="text" name="bot-field">
-  </form>
+<!-- Netlify Forms の隠しフォーム（検出用） -->
+<form name="experiment-data" method="POST" data-netlify="true" netlify netlify-honeypot="bot-field" hidden>
+  <!-- この hidden は“おまじない”的に効きが良いです -->
+  <input type="hidden" name="form-name" value="experiment-data">
+  <!-- 実データ用のフィールド（jsでJSON文字列を入れてPOST） -->
+  <input type="text" name="data">
+  <!-- ハニーポット（スパム対策） -->
+  <input type="text" name="bot-field">
+</form>
 
   <noscript>
     <p style="max-width:680px;margin:24px auto;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">
