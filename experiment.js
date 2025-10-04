@@ -2,7 +2,7 @@
  *  experiment.js  (jsPsych v6.3.1)
  *  - PC限定（モバイルはメッセージのみ表示）
  *  - 同意クリックで静かにフルスクリーン
- *  - 練習2本 → 本番40（stimuli/manifest.json 優先）
+ *  - 練習2本 → 本番（stimuli/manifest.json 優先）
  *  - 各試行：注視点(1000ms) → 再生(Canvas) → 1ページ5件法（リッカート＋SD）＋自由記述
  *    ・各項目は「〇—〇—〇—〇—〇」（端で線が止まる／はみ出し無し）
  *    ・選択ドットは薄いグレー（SELECT_COLORで調整可）
@@ -40,7 +40,7 @@ const SELECT_RING  = 'rgba(191,199,209,.22)';
 // === 5件法・左＝ポジティブ ===
 const LIKERT_POINTS = 5;
 
-// ★ リッカートの尺度ラベル（指定どおり）
+// ★ リッカートの尺度ラベル
 const SCALE_LABELS_LIKERT = [
   '当てはまる',
   'やや当てはまる',
@@ -49,7 +49,7 @@ const SCALE_LABELS_LIKERT = [
   '当てはまらない'
 ];
 
-// ★ SDの尺度ラベル（指定どおり）
+// ★ SDの尺度ラベル
 const SCALE_LABELS_SD = [
   '非常に',
   'やや',
@@ -69,7 +69,7 @@ const QUESTIONS_LIKERT_BASE = [
   { kind:'likert', name:'KAWAII',  label:'●をかわいいと感じましたか' }
 ];
 
-// SD（4項目）※順序はご提示の並びに合わせる
+// SD（4項目）
 const QUESTIONS_SD = [
   { kind:'sd', name:'VALENCE',  label:'快‐不快',     left:'快い',         right:'不快だ' },
   { kind:'sd', name:'APPROACH', label:'接近‐回避',   left:'近づきたい',   right:'避けたい' },
@@ -126,7 +126,7 @@ function makeSurveyPage(opts, file=null, index1=null){
       display:grid; grid-template-columns:minmax(220px,1.05fr) 1fr; align-items:center; gap:10px;
       background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; margin:10px 0;
     }
-    .lm-label{ font-weight:600; line-height:1.55; }
+    .lm-label{ font-weight:600; line-height:1.55; color:#374151; } /* ← SD左右アンカーと色を合わせる */
 
     .lm-strip{
       position:relative; display:grid; grid-template-columns:repeat(${LIKERT_POINTS},1fr);
@@ -173,7 +173,7 @@ function makeSurveyPage(opts, file=null, index1=null){
       display:grid; grid-template-columns:minmax(110px,.9fr) 1fr minmax(110px,.9fr); align-items:center; gap:10px;
       background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; margin:10px 0;
     }
-    .sd-anch{ text-align:center; font-weight:600; color:#374151; }
+    .sd-anch{ text-align:center; font-weight:600; color:#374151; } /* ← Likert質問文と色を統一 */
 
     .sd-strip{
       position:relative; display:grid; grid-template-columns:repeat(${LIKERT_POINTS},1fr);
@@ -203,11 +203,6 @@ function makeSurveyPage(opts, file=null, index1=null){
 
     /* 自由記述 */
     .free{ width:100%; min-height:80px; }
-
-/* Likertの質問文とSD左右アンカーの色を統一 */
-.lm-label { color: #374151 !important; }
-.sd-anch  { color: #374151 !important; }
-
   </style>`;
 
   // 1) リッカート・ブロック（上部尺度ラベル＋各行バー）
@@ -427,78 +422,34 @@ async function preloadStimuliList(){
 /***** 7) タイムライン *****/
 const timeline = [];
 
-// ==== イントロダクション（同意） ====
+// 同意（同意のクリックと同じジェスチャでフルスクリーン要求）
 timeline.push({
   type: 'html-button-response',
   stimulus: `
     <h2>図形の動きに対する印象アンケート</h2>
-    <p>この度はお忙しいところ、本調査にご協力いただき誠にありがとうございます。<br>
-    回答を始める前に、以下の点をご確認ください。</p>
-
-    <div style="text-align: left; max-height: 500px; overflow-y: auto; padding: 10px; border: 1px solid #ccc; font-size: 14px;">
-
-      <h3>本調査の目的</h3>
-      <p>本調査は、図形が動いている様子に対する感じ方の傾向を調べることを目的としています。</p>
-
-      <h3>本調査への回答および辞退について</h3>
-      <p>本調査への回答は、あなたの自由な意思によるものです。調査への回答を始めた後でも、いつでも回答を中止することができます。<br>
-      回答を中止した場合、そのデータは一切使用されません。また、本調査に回答しないこと、あるいは回答を中止することで、あなたが不利益を被ることはありません。<br>
-      <strong>ただし、報酬の受け取りには回答の完了が必要です。途中で終了した場合は報酬の対象外となります。</strong></p>
-
-      <h3>本調査で得られるデータの取り扱いについて</h3>
-      <p>本調査で得られたデータは、すべて個人と紐づけられない形で統計的に処理され、パスワードをかけて厳重に保管されます。<br>
-      回答データから回答者個人を特定できないようにする方法として、回答データを匿名化したうえで、回答者とその回答データの対応表を作成しないという手法をとります。<br>
-      得られたデータの保管期間は、公益社団法人・日本心理学会の倫理規定に従い、研究公表から5年間とします。保管期限経過後、得られたデータは破棄されます。<br>
-      収集される個人情報は報酬のお支払い手続きにのみ使用し、報酬のお支払いが完了した時点で破棄されます。なお、名前・連絡先は取得しません。<br>
-      本調査で得られたデータは、学術目的に限定して公表される場合があります。データを公表する際にも、個人が特定できない形で公表を行います。</p>
-
-      <h3>本調査の回答方法について</h3>
-      <p>本調査は、オンラインフォーム上のアンケートによって実施されます。回答に正解・不正解はありません。それぞれの質問に、素直にお答えください。<br>
-      本調査への回答は、パソコン（Windows、Mac等）から行ってください。<strong>本調査には20分程度の回答時間を要します。静穏な環境でご回答ください。</strong></p>
-
-      <h3>重要なお願い（必ずお読みください）</h3>
-      <ul>
-        <li><strong>本調査は全画面表示で行います。</strong>「同意する」を押すと自動的に全画面に切り替わります。<strong>全画面のまま</strong>最後までご回答ください。</li>
-        <li>データ品質のため、<strong>途中での中断・離脱はしないでください。</strong>やむを得ず中止する場合は、その時点でページを閉じてください（<strong>途中までの回答は使用せず、報酬の対象にもなりません</strong>）。</li>
-        <li>回答中は、ブラウザの<strong>戻る／更新</strong>、他タブ・他ウィンドウ操作は行わないでください。</li>
-      </ul>
-
-    </div>
-
-    <h3>あなたは、上記の説明をよく読み、調査への参加に同意しますか。</h3>
-    <p style="font-weight: bold;">※「同意する」を押すと全画面表示に切り替わります。<br>※「同意しない」を選択すると、調査終了ページに移動します。</p>
+    <p>この研究の目的は、図形の動きに対する印象（かわいさ／生物性／意図性 等）を調べることです。</p>
+    <p>所要時間は約20分です。PCのみ参加可能です。途中での中断はご遠慮ください。</p>
   `,
-  choices: ['同意する', '同意しない'],
-
-  // 「同意する」を押した瞬間にフルスクリーン要求
+  choices: ['同意する','同意しない'],
   on_load: () => {
     const btns = document.querySelectorAll('.jspsych-btn');
-    if (btns[0]) {
-      btns[0].addEventListener('click', () => {
-        const el = document.documentElement;
-        if (!document.fullscreenElement && el.requestFullscreen) {
-          el.requestFullscreen().catch(()=>{ /* ユーザー拒否などは無視 */ });
-        }
-      }, { once: true });
-    }
+    if (btns[0]) btns[0].addEventListener('click', () => {
+      const el = document.documentElement;
+      if (!document.fullscreenElement && el.requestFullscreen) {
+        el.requestFullscreen().catch(()=>{ /* 失敗しても無視 */ });
+      }
+    }, { once:true });
   },
-
-  // 「同意しない」のときは終了（※v6は button_pressed が '0'|'1' の文字列）
-  on_finish: function(data){
-    if (data.button_pressed === '1') {
-      jsPsych.endExperiment("調査へのご参加、ありがとうございました。<br>今回は同意が得られなかったため、調査は行われませんでした。");
-    }
-  }
+  on_finish: (d)=>{ if (d.button_pressed === '1') { jsPsych.endExperiment('同意が得られませんでした。'); } }
 });
-
 
 // 操作説明
 timeline.push({
   type: 'html-button-response',
   stimulus: `
     <h3>操作説明</h3>
-    <p>図形が動くアニメーションが表示されます。</p>
-    <p>アニメーションの後に表示される質問に回答してください。</p>
+    <p>図形のアニメーションを見て、続いて表示される質問（1ページ）にお答えください。</p>
+    <p><strong>5件法・左＝ポジティブ</strong>です。注意チェックは最後のページに1問だけ含まれます。</p>
   `,
   choices: ['練習を始める']
 });
@@ -517,6 +468,18 @@ for (let i=0;i<practiceFiles.length;i++){
 /***** 8) 本番ブロックを非同期で構築 → jsPsych.init *****/
 async function main(){
   const stimFiles = await preloadStimuliList();
+
+  // ★ 練習→本番のブリッジ（ここからが本番です）
+  timeline.push({
+    type: 'html-button-response',
+    stimulus: `
+      <h3>本番開始</h3>
+      <p>ここからが本番です。先ほどと同じ形式でアニメーションが表示されます。</p>
+      <p>アニメーションの後に表示される質問に回答してください。</p>
+    `,
+    choices: ['開始する']
+  });
+
   const order = jsPsych.randomization.shuffle(stimFiles); // 刺激順ランダム（必要なら固定可）
 
   order.forEach((file, idx)=>{
