@@ -1,0 +1,12 @@
+{
+  "main": [
+    "c1_f_g_01.json","c1_f_g_02.json","c1_m_g_01.json","c1_m_g_02.json","c1_s_g_01.json","c1_s_g_02.json",
+    "c2_f_g_01.json","c2_f_g_02.json","c2_m_g_01.json","c2_m_g_02.json","c2_s_g_01.json","c2_s_g_02.json",
+    "ha_f_g_01.json","ha_f_g_02.json","ha_m_g_01.json","ha_m_g_02.json","ha_s_g_01.json","ha_s_g_02.json",
+    "la_f_g_01.json","la_f_g_02.json","la_m_g_01.json","la_m_g_02.json","la_s_g_01.json","la_s_g_02.json",
+    "st_f_g_01.json","st_f_g_02.json","st_m_g_01.json","st_m_g_02.json","st_s_g_01.json","st_s_g_02.json",
+    "zz_f_g_01.json","zz_f_g_02.json","zz_m_g_012.json","zz_m_g_01.json",
+    "zz_m_g_022.json","zz_m_g_02.json","zz_s_g_012.json","zz_s_g_01.json",
+    "zz_s_g_022.json","zz_s_g_02.json"
+  ]
+}

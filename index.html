@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>図形の動きアンケート</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- jsPsych v6 のCSS（ローカル） -->
+  <link rel="stylesheet" href="./jspsych.css">
+
+<style>
+  /* === 1) 画面センター寄せ（全ページ共通） === */
+  html, body { height: 100%; }
+  body { margin: 0; background: #f6f7fb; }
+  #jspsych-target{
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 32px; box-sizing: border-box; overflow: auto;
+  }
+  #jspsych-target > *{ margin: auto; }
+  canvas{ display:block; margin:0 auto; }
+  .jspsych-btn{ padding:10px 16px; }
+
+  /* === 2) 質問ページ（survey-html-form で自作した7件法UI用） ===
+     ※ あなたの makeSurveyPage() が出す .qrow / .scale / .ticks / .opt に効きます */
+  .qrow{margin:12px 0;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+  .qlabel{margin-bottom:8px;font-weight:600}
+  .scale{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;max-width:760px}
+  .scale > span:first-child, .scale > span:last-child{ color:#6b7280; font-size:0.95rem }
+
+  /* 丸ポチの見た目 */
+  .ticks{display:flex;gap:10px}
+  .opt{position:relative;cursor:pointer}
+  .opt input{position:absolute;opacity:0;inset:0}
+  .opt span{
+    display:inline-flex;justify-content:center;align-items:center;
+    width:36px;height:36px;border-radius:50%;
+    border:2px solid #cbd5e1;background:#fff;color:#64748b;font-weight:600;
+    transition:all .12s ease;
+  }
+  .opt:hover span{ border-color:#94a3b8 }
+  .opt input:checked + span{
+    background:#2563eb;border-color:#2563eb;color:#fff;
+    box-shadow:0 0 0 2px rgba(37,99,235,.15);
+  }
+
+  /* ★ 7件法の中央(4番目)＝「どちらでもない」を強調（CSSだけで実装） */
+  .ticks .opt:nth-child(4) span{ border-style:dashed; background:#f8fafc; color:#475569; }
+  .ticks .opt:nth-child(4) span::after{
+    content:"どちらでもない";
+    position:absolute; top:120%; left:50%; transform:translateX(-50%);
+    font-size:.8rem; color:#6b7280; white-space:nowrap;
+  }
+
+  /* === 3) IMC（はい/いいえ）だけ大きめのボタンに（CSSのみ：:has()利用） ===
+     ※ 最新のPCブラウザで動きます。 */
+  .scale:has(input[name="IMC_content"]) .ticks{
+    display:grid; grid-template-columns:repeat(2, minmax(120px,1fr)); gap:12px;
+  }
+  .scale:has(input[name="IMC_content"]) .opt span{
+    width:auto;height:auto;padding:14px 0;border-radius:12px;border-width:1.5px;font-weight:700
+  }
+  /* （IMC「指示理解」の7件法は通常の見た目のままでOK） */
+
+  /* 自由記述 */
+  .free{width:100%;min-height:80px}
+</style>
+
+
+</head>
+<body>
+
+  <!-- Netlify Forms が投稿先を認識するための隠しフォーム -->
+  <form name="experiment-data" data-netlify="true" hidden>
+    <input type="text" name="data">
+  </form>
+
+  <!-- jsPsych が描画する領域 -->
+  <div id="jspsych-target"></div>
+
+  <!-- ===== jsPsych Core（グローバルに jsPsych を定義） ===== -->
+  <script src="./jspsych.js"></script>
+
+  <!-- ===== 必要プラグイン（v6形式／グローバル定義） ===== -->
+  <script src="./plugins/jspsych-fullscreen.js"></script>
+  <script src="./plugins/jspsych-html-keyboard-response.js"></script>
+  <script src="./plugins/jspsych-html-button-response.js"></script>
+  <script src="./plugins/jspsych-survey-html-form.js"></script>
+  <script src="./plugins/jspsych-survey-likert.js"></script>
+
+  <!-- ===== あなたの本体スクリプト：★ module として読み込む → トップレベル await が許可される -->
+  <script type="module" src="./experiment.js"></script>
+</body>
+</html>
