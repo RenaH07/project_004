@@ -10,45 +10,63 @@
   <link rel="stylesheet" href="./jspsych.css">
 
 <style>
-  /* === レイアウト調整の共通変数（数値だけ変えれば全体が追随） === */
+  /* ===== レイアウトの共通変数（数字を変えれば全体が追随） ===== */
   :root{
-    /* ページの最大幅（少しだけ広げる） */
-    --page-max: min(96vw, 1000px); /* 例: 最大1000px。もう少し控えめなら 960px などに */
+    /* ページの最大幅：少し広げる（5文字を横に収めやすく） */
+    --page-max: min(96vw, 1040px);
 
-    /* バー横幅をそろえるためのサイド幅
+    /* バー横幅を Likert/SD で一致させるためのサイド幅
        - Likert の左ラベル列 = --bar-side
        - SD の左右アンカー列 = --bar-anchor（左右合計が --bar-side と等しい）
-       clamp() で画面幅によって 240–320px の範囲で可変 */
-    --bar-side: clamp(240px, 26vw, 320px);   /* ← “少し広げる”設定 */
+       clamp で画面幅に合わせて可変（数値はお好みで微調整可） */
+    --bar-side: clamp(250px, 26vw, 320px);
     --bar-anchor: calc(var(--bar-side) / 2);
   }
 
-  /* ページ幅（experiment.js 内の .page-wrap を上書き） */
-  #jspsych-target .page-wrap{
-    max-width: var(--page-max) !important;
+  /* ===== 画面中央寄せ（#jspsych-target をフレックス中央） ===== */
+  html, body { height: 100%; }
+  body { margin: 0; background: #f6f7fb; }
+  #jspsych-target{
+    min-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 32px !important;
+    box-sizing: border-box !important;
+    overflow: auto !important;
   }
+  /* 内側カードを中央に */
+  #jspsych-target .page-wrap{ max-width: var(--page-max) !important; margin: 0 auto !important; }
+  #jspsych-target > * { margin: 0 auto !important; }
 
-  /* === Likert：左ラベル列 + バー列 === */
+  /* ===== Likert：左ラベル列 + バー列 ===== */
   #jspsych-target .lm-head,
   #jspsych-target .lm-row{
     grid-template-columns: var(--bar-side) 1fr !important;
   }
 
-  /* === SD：左アンカー + バー列 + 右アンカー（左右合計＝Likert左列と同じ） === */
+  /* ===== SD：左アンカー + バー列 + 右アンカー（左右合計＝Likert左列と同じ） ===== */
   #jspsych-target .sd-head,
   #jspsych-target .sd-row{
     grid-template-columns: var(--bar-anchor) 1fr var(--bar-anchor) !important;
   }
 
-  /* 尺度ラベル（バー上の5つ）を読みやすく：改行OK・やや広め・下寄せ */
+  /* ===== 尺度ラベル（バー上の5つ）— 任意位置で改行OK =====
+     - \n（改行文字）も <br> も両方有効に
+     - 下寄せで丸とラインに揃える */
   #jspsych-target .lm-scale-head > div,
   #jspsych-target .sd-scale-head > div{
-    white-space: normal !important;  /* 手動の <br> も自動折返しも有効 */
+    white-space: pre-line !important;  /* ← \n を改行として表示。<br> もそのまま効く */
     word-break: normal !important;
     line-height: 1.15 !important;
-    align-items: flex-end !important; /* 下ぞろえで整列 */
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding-bottom: 2px !important;
   }
 </style>
+
 
 </head>
 <body>
