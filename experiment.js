@@ -149,18 +149,18 @@ const LIKERT_POINTS = 5;
 // ★ リッカートの尺度ラベル
 const SCALE_LABELS_LIKERT = [
   'あてはまる',
-  'ややあてはまる',
-  'どちらでもない',
-  'あまりあてはまらない',
-  'あてはまらない'
+  'やや\nあてはまる',
+  'どちらとも\nいえない',
+  'あまり\nあてはまら\nない',
+  'あてはまら\nない'
 ];
 
 // ★ SDの尺度ラベル
 const SCALE_LABELS_SD = [
   'たいへん',
-  'どちらかといえば',
-  'どちらともいえない',
-  'どちらかといえば',
+  'どちらかと\nいえば',
+  'どちらとも\nいえない',
+  'どちらかと\nいえば',
   'たいへん'
 ];
 
@@ -226,7 +226,7 @@ function makeSurveyPage(opts, file=null, index1=null){
       align-items:end;
     }
     .lm-scale-head > div{
-      display:flex; align-items:flex-end; justify-content:center; line-height:1.05; padding-bottom:2px;
+      display:flex; align-items:flex-end; justify-content:center; line-height:1.2; padding-bottom:2px; white-space: pre-line;
     }
     .lm-row{
       display:grid; grid-template-columns:minmax(220px,1.05fr) 1fr; align-items:center; gap:10px;
@@ -272,7 +272,7 @@ function makeSurveyPage(opts, file=null, index1=null){
       align-items:end;
     }
     .sd-scale-head > div{
-      display:flex; align-items:flex-end; justify-content:center; line-height:1.05; padding-bottom:2px;
+      display:flex; align-items:flex-end; justify-content:center; line-height:1.2; padding-bottom:2px; white-space: pre-line;
     }
 
     .sd-row{
@@ -585,7 +585,7 @@ timeline.push({
 
       <h3>本調査の回答方法について</h3>
       <p>本調査は、オンラインフォーム上のアンケートによって実施されます。回答に正解・不正解はありません。それぞれの質問に、素直にお答えください。<br>
-      <p>本調査には20分程度の回答時間を要します。静穏な環境でご回答ください。</p>
+      本調査には20分程度の回答時間を要します。パソコン（Windows、Mac等）を用いて、静穏な環境でご回答ください。</p>
 
       <h3>重要なお願い</h3>
       <ul>
