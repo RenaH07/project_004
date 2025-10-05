@@ -33,12 +33,16 @@ function showSendingScreen(msg){
   host.innerHTML = `
     <style>
       @keyframes spin { to { transform: rotate(360deg); } }
-      .send-wrap{ min-height:70vh; display:flex; flex-direction:column;
-                  align-items:center; justify-content:center; gap:16px;
-                  font-size:1.05rem; color:#111827; text-align:center; }
-      .spinner{ width:38px; height:38px; border-radius:50%;
-                border:3px solid #cbd5e1; border-top-color:#4b5563;
-                animation: spin .9s linear infinite; }
+      .send-wrap{
+        min-height: 70vh; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:16px;
+        font-size: 1.05rem; color:#111827; text-align:center;
+      }
+      .spinner{
+        width:38px; height:38px; border-radius:50%;
+        border:3px solid #cbd5e1; border-top-color:#4b5563;
+        animation: spin 0.9s linear infinite;
+      }
       .send-note{ color:#6b7280; font-size:.9rem; line-height:1.8; }
     </style>
     <div class="send-wrap">
@@ -77,11 +81,11 @@ function queuePending(payload){
 
 function startAutoRetryLoop(payload, onSuccess){
   (async ()=>{
-    // まず即時1回
+    // 即時1回
     let ok = await postOnce(payload, 15000);
     if (ok){ localStorage.removeItem(QUEUE_KEY); onSuccess(); return; }
 
-    // 以降15秒間隔で自動再試行
+    // 以降は15秒間隔で自動再試行
     const iv = setInterval(async ()=>{
       ok = await postOnce(payload, 15000);
       if (ok){
@@ -91,7 +95,7 @@ function startAutoRetryLoop(payload, onSuccess){
       }
     }, 15000);
 
-    // オンライン復帰イベント時も即時トライ
+    // オンライン復帰でも即時1回
     const onOnline = async ()=>{
       ok = await postOnce(payload, 15000);
       if (ok){
@@ -104,19 +108,24 @@ function startAutoRetryLoop(payload, onSuccess){
   })();
 }
 
-// 再訪時に未送信があれば黙って再送（UIは出さない）
-(async function attemptResendPendingOnLoad(){
+function attemptResendPendingOnLoad(){
   const raw = localStorage.getItem(QUEUE_KEY);
   if (!raw) return;
   let payload = null;
   try{ payload = JSON.parse(raw); }catch(e){}
   if (!payload) return;
-  let ok = await postOnce(payload, 12000);
-  if (ok){ localStorage.removeItem(QUEUE_KEY); return; }
-  startAutoRetryLoop(payload, ()=>{ /* 成功しても画面はそのまま */ });
-})();
 
+  // バックグラウンドで静かに再送：1回試し、ダメなら短いループ
+  (async ()=>{
+    let ok = await postOnce(payload, 12000);
+    if (ok){ localStorage.removeItem(QUEUE_KEY); return; }
+    startAutoRetryLoop(payload, ()=>{ /* 成功しても画面はそのまま */ });
+  })();
+}
+
+// ★ ページ読み込み時に未送信データがあれば自動再送
 attemptResendPendingOnLoad();
+
 
 
 /***** 1) ユーティリティ／定数 *****/
