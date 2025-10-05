@@ -59,7 +59,10 @@ async function postOnce(payload, timeoutMs=15000){
   try{
     const res = await fetch("/", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+       "Content-Type": "application/x-www-form-urlencoded",
+       "Accept": "application/json"
+      },
       body: new URLSearchParams({
         "form-name": "experiment-data",
         "data": JSON.stringify(payload)
@@ -670,7 +673,10 @@ timeline.push({
     d.participant_id = PID; 
     d.block = 'final_comment';
 
-    // 送信中の待機画面（参加者は待つだけ）
+// ★ タイムラインを一時停止（送信完了まで先に進めない）
+jsPsych.pauseExperiment();
+
+// 送信中の待機画面（参加者は待つだけ）
     showSendingScreen('データを送信中です…');
 
     // 送信 payload（meta はあなたの追記分を踏襲）
@@ -695,7 +701,9 @@ timeline.push({
       if (ok){
         if (document.fullscreenElement) document.exitFullscreen?.();
         jsPsych.endExperiment('データを送信しました。ご協力ありがとうございました。<br><br>このウィンドウを閉じて終了してください。');
-        return;
+      // ★ 再開して終了処理を進める
+      jsPsych.resumeExperiment();
+      return;
       }
 
       // 失敗：一時保存して自動再送を継続。数秒見せたら終了文言に切り替え
@@ -708,6 +716,8 @@ timeline.push({
           'データの送信手続きを継続しています（通信が回復すると自動で完了します）。<br>' +
           'ご協力ありがとうございました。<br><br>このウィンドウを閉じて終了してください。'
         );
+        // ★ 再開して終了処理を進める
+        jsPsych.resumeExperiment();
       }, 4000); // ← スピナーを少しだけ見せる
     })();
   }
