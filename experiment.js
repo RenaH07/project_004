@@ -148,11 +148,11 @@ const LIKERT_POINTS = 5;
 
 // ★ リッカートの尺度ラベル
 const SCALE_LABELS_LIKERT = [
-  '当てはまる',
-  'やや当てはまる',
+  'あてはまる',
+  'ややあてはまる',
   'どちらでもない',
-  'あまり当てはまらない',
-  '当てはまらない'
+  'あまりあてはまらない',
+  'あてはまらない'
 ];
 
 // ★ SDの尺度ラベル
@@ -177,7 +177,7 @@ const QUESTIONS_LIKERT_BASE = [
 
 // SD（4項目）
 const QUESTIONS_SD = [
-  { kind:'sd', name:'VALENCE',  label:'快‐不快',     left:'快い',         right:'不快だ' },
+  { kind:'sd', name:'VALENCE',  label:'快‐不快',     left:'快い',         right:'不快' },
   { kind:'sd', name:'APPROACH', label:'接近‐回避',   left:'近づきたい',   right:'避けたい' },
   { kind:'sd', name:'SMOOTH',   label:'ぎこちなさ', left:'洗練された',   right:'ぎこちない' },
   { kind:'sd', name:'PREDICT',  label:'予測性',       left:'予測しやすい', right:'予測しにくい' }
@@ -366,14 +366,14 @@ function makeSurveyPage(opts, file=null, index1=null){
   const html = `${css}
     <div class="page-wrap">
       <div class="blk">
-        <div class="section-title">評価（リッカート：5件法・左＝ポジティブ）</div>
+        <div class="section-title">以下の項目について、どの程度そう感じたかを選んでください。</div>
         <div class="lm-wrap">
           ${likertHeader}
           ${likertRows}
         </div>
       </div>
       <div class="blk">
-        <div class="section-title">評価（SD法：5件法・左＝ポジティブ）</div>
+        <div class="section-title">以下の対になった言葉について、あなたの印象に近い位置を選んでください。</div>
         <div class="sd-wrap">
           ${sdHeader}
           ${sdRows}
@@ -384,7 +384,7 @@ function makeSurveyPage(opts, file=null, index1=null){
 
   return {
     type:'survey-html-form',
-    preamble:'<h3>質問にお答えください</h3>',
+    preamble:'<h3>直前のアニメーションの黒い丸について、あなたの印象に最も近い選択肢を選んでください。</h3>',
     html,
     button_label:'次へ',
 
@@ -580,7 +580,6 @@ timeline.push({
       <h3>本調査で得られるデータの取り扱いについて</h3>
       <p>本調査で得られたデータは、すべて個人と紐づけられない形で統計的に処理され、パスワードをかけて厳重に保管されます。<br>
       回答データから回答者個人を特定できないようにする方法として、回答データを匿名化したうえで、回答者とその回答データの対応表を作成しないという手法をとります。<br>
-      得られたデータの保管期間は、公益社団法人・日本心理学会の倫理規定に従い、研究公表から5年間とします。保管期限経過後、得られたデータは破棄されます。<br>
       収集される個人情報は報酬のお支払い手続きにのみ使用し、報酬のお支払いが完了した時点で破棄されます。なお、名前・連絡先は取得しません。<br>
       本調査で得られたデータは、学術目的に限定して公表される場合があります。データを公表する際にも、個人が特定できない形で公表を行います。</p>
 
@@ -629,8 +628,8 @@ timeline.push({
   type: 'html-button-response',
   stimulus: `
     <h3>操作説明</h3>
-    <p>図形が動くアニメーションが表示されます。</p>
-    <p>アニメーションの後に表示される質問に回答してください。</p>
+    <p>アニメーションの再生が終わると、質問が表示されます。</p>
+    <p>直前のアニメーションの黒い丸に対する印象について回答してください。</p>
   `,
   choices: ['練習を始める'],
   // ★ 説明を読んでいる間に、練習2本を先読み
@@ -660,8 +659,9 @@ async function main(){
     type: 'html-button-response',
     stimulus: `
       <h3>本番開始</h3>
-      <p>ここからが本番です。先ほどと同じ形式でアニメーションが表示されます。</p>
-      <p>アニメーションの後に表示される質問に回答してください。</p>
+      <p>ここからが本番です。</p>
+      <p>先ほどと同じようにアニメーションの再生が終わると、質問が表示されます。</p>
+      <p>直前のアニメーションの黒い丸に対する印象について回答してください。</p>
     `,
     choices: ['開始する']
   });
