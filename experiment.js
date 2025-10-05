@@ -48,7 +48,7 @@ function showSendingScreen(msg){
     <div class="send-wrap">
       <div class="spinner" aria-label="送信中"></div>
       <div>${msg || 'データを送信中です…'}</div>
-      <div class="send-note">通信が不安定な場合でも、自動で再送を続けます。<br>このままお待ちください。</div>
+      <div class="send-note">このままお待ちください。</div>
     </div>
   `;
 }
@@ -170,9 +170,9 @@ function getSDLabels(){ return SCALE_LABELS_SD.slice(); }
 /***** 2) 質問定義（固定順・左＝ポジティブ） *****/
 // リッカート（3項目）※順序＝生物性→意図性→かわいい
 const QUESTIONS_LIKERT_BASE = [
-  { kind:'likert', name:'ANIMACY', label:'●は生き物のように感じましたか' },
-  { kind:'likert', name:'INTENT',  label:'●は目的（意図）をもって動いているように感じましたか' },
-  { kind:'likert', name:'KAWAII',  label:'●をかわいいと感じましたか' }
+  { kind:'likert', name:'ANIMACY', label:'生き物のように感じましたか' },
+  { kind:'likert', name:'INTENT',  label:'目的をもって動いているように感じましたか' },
+  { kind:'likert', name:'KAWAII',  label:'かわいいと感じましたか' }
 ];
 
 // SD（4項目）
@@ -387,6 +387,14 @@ function makeSurveyPage(opts, file=null, index1=null){
     preamble:'<h3>質問にお答えください</h3>',
     html,
     button_label:'次へ',
+
+    // ★ 回答している間に次の刺激を先読み
+on_load: ()=>{
+const i = (index1 || 0);           // 今の刺激の1-based番号
+const ord = window.STIM_ORDER || [];
+prefetchStim(ord[i]);               // 次の JSON
+prefetchStim(ord[i+1]);             // 念のため その次も
+},
     on_finish: (d)=>{
       // v6: responses は JSON文字列。なければ空。
       const resp = (d && typeof d.response === 'object' && d.response !== null)
@@ -449,6 +457,25 @@ function normalizeStim(raw){
   return { W:800, H:600, BG:'#fff', R:30, positions:[] };
 }
 
+/* === JSON 先読み用の簡易キャッシュ === */
+const STIM_CACHE = new Map();
+
+async function loadStimJson(file){
+  if (STIM_CACHE.has(file)) return STIM_CACHE.get(file);
+  const r = await fetch(file, { cache: 'force-cache' });   // ブラウザのHTTPキャッシュも活用
+  if (!r.ok) throw new Error(`fetch failed ${file} [${r.status}]`);
+  const raw  = await r.json();
+  const data = normalizeStim(raw);
+  STIM_CACHE.set(file, data);
+  return data;
+}
+
+function prefetchStim(file){
+  if (!file || STIM_CACHE.has(file)) return;
+  // 失敗は無視（再生時に再トライ）
+  loadStimJson(file).catch(()=>{});
+}
+
 function makePlayback(file){
   return {
     type:'html-keyboard-response',
@@ -465,10 +492,8 @@ function makePlayback(file){
         }
         const ctx = cv.getContext('2d');
 
-        const r = await fetch(file);
-        if (!r.ok) throw new Error(`fetch failed ${file} [${r.status}]`);
-        const raw = await r.json();
-        const data = normalizeStim(raw);
+        // ★ 先読み済みなら即取得、なければここで読み込み
+        const data = await loadStimJson(file);
 
         cv.width = data.W; cv.height = data.H;
 
@@ -476,8 +501,10 @@ function makePlayback(file){
         function drawFrame(){
           const p = data.positions[f++];
           if (!p) { jsPsych.finishTrial(); return; }
+
           // 背景
           ctx.fillStyle = data.BG; ctx.fillRect(0,0,data.W,data.H);
+
           // goal
           if (data.goal){
             ctx.fillStyle = data.goal.color || '#ff6666';
@@ -494,7 +521,10 @@ function makePlayback(file){
 
           requestAnimationFrame(drawFrame);
         }
-        requestAnimationFrame(drawFrame);
+
+        // ★ 初回はすぐ描画（1フレーム分の遅延を削減）
+        drawFrame();
+
       }catch(e){
         console.error(e);
         jsPsych.finishTrial(); // 失敗時も止まらず次へ
@@ -503,6 +533,7 @@ function makePlayback(file){
     on_finish:(d)=>{ d.block='stim'; d.stimulus_file=file; }
   };
 }
+
 
 /***** 6) 刺激リスト（manifest 優先 → trial_001..040 へフォールバック） *****/
 async function preloadStimuliList(){
@@ -598,10 +629,15 @@ timeline.push({
   type: 'html-button-response',
   stimulus: `
     <h3>操作説明</h3>
-    <p>図形のアニメーションを見て、続いて表示される質問（1ページ）にお答えください。</p>
-    <p><strong>5件法・左＝ポジティブ</strong>です。注意チェックは最後のページに1問だけ含まれます。</p>
+    <p>図形が動くアニメーションが表示されます。</p>
+    <p>アニメーションの後に表示される質問に回答してください。</p>
   `,
-  choices: ['練習を始める']
+  choices: ['練習を始める'],
+  // ★ 説明を読んでいる間に、練習2本を先読み
+  on_load: ()=>{
+    prefetchStim('stimuli/st_m_g_01.json');
+    prefetchStim('stimuli/st_m_g_02.json');   
+    } 
 });
 
 // 練習（2本）
@@ -630,7 +666,11 @@ async function main(){
     choices: ['開始する']
   });
 
-  const order = jsPsych.randomization.shuffle(stimFiles); // 刺激順ランダム（必要なら固定可）
+const order = jsPsych.randomization.shuffle(stimFiles); // 刺激順ランダム
+// ★ どこからでも参照できるように保持し、冒頭で2本プリフェッチ
+window.STIM_ORDER = order;
+prefetchStim(order[0]);
+prefetchStim(order[1]);
 
   order.forEach((file, idx)=>{
     timeline.push(makeFixation(FIX_MS));
@@ -666,7 +706,7 @@ async function main(){
 // 最終自由記述（任意）→ この on_finish で送信→終了まで持っていく
 timeline.push({
   type: 'survey-html-form',
-  preamble:'<h3>ご意見・ご感想（任意）</h3><p>実験全体を通して気づいたことがあればご記入ください。</p>',
+  preamble:'<h3>ご意見・ご感想（任意）</h3><p>調査全体を通して気づいたことがあればご記入ください。</p>',
   html:`<textarea name="comment" rows="4" style="width:100%"></textarea>`,
   button_label: '送信',   // ←「送信へ」から変更
   on_finish: (d)=>{ 
@@ -688,7 +728,7 @@ jsPsych.pauseExperiment();
         ver: "2025-10-04a",
         ua: navigator.userAgent,
         vp: { w: innerWidth, h: innerHeight },
-        stim_order: (typeof order !== 'undefined') ? order : null
+        stim_order: (window.STIM_ORDER || null)
       },
       data: JSON.parse(jsPsych.data.get().json())
     };
