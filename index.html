@@ -9,20 +9,47 @@
   <!-- jsPsych v6.3.1 のCSS（ローカル） -->
   <link rel="stylesheet" href="./jspsych.css">
 
-  <style>
-    /* 画面中央に表示（全ページ共通） */
-    html, body { height:100%; }
-    body { margin:0; background:#f6f7fb; }
-    #jspsych-target{
-      min-height:100vh;
-      display:flex; align-items:center; justify-content:center;
-      padding:32px; box-sizing:border-box; overflow:auto;
-      max-width: 980px; margin: 0 auto;
-    }
-    #jspsych-target > *{ margin:auto; }
-    canvas{ display:block; margin:0 auto; }
-    .jspsych-btn{ padding:10px 16px; }
-  </style>
+<style>
+  /* === レイアウト調整の共通変数（数値だけ変えれば全体が追随） === */
+  :root{
+    /* ページの最大幅（少しだけ広げる） */
+    --page-max: min(96vw, 1000px); /* 例: 最大1000px。もう少し控えめなら 960px などに */
+
+    /* バー横幅をそろえるためのサイド幅
+       - Likert の左ラベル列 = --bar-side
+       - SD の左右アンカー列 = --bar-anchor（左右合計が --bar-side と等しい）
+       clamp() で画面幅によって 240–320px の範囲で可変 */
+    --bar-side: clamp(240px, 26vw, 320px);   /* ← “少し広げる”設定 */
+    --bar-anchor: calc(var(--bar-side) / 2);
+  }
+
+  /* ページ幅（experiment.js 内の .page-wrap を上書き） */
+  #jspsych-target .page-wrap{
+    max-width: var(--page-max) !important;
+  }
+
+  /* === Likert：左ラベル列 + バー列 === */
+  #jspsych-target .lm-head,
+  #jspsych-target .lm-row{
+    grid-template-columns: var(--bar-side) 1fr !important;
+  }
+
+  /* === SD：左アンカー + バー列 + 右アンカー（左右合計＝Likert左列と同じ） === */
+  #jspsych-target .sd-head,
+  #jspsych-target .sd-row{
+    grid-template-columns: var(--bar-anchor) 1fr var(--bar-anchor) !important;
+  }
+
+  /* 尺度ラベル（バー上の5つ）を読みやすく：改行OK・やや広め・下寄せ */
+  #jspsych-target .lm-scale-head > div,
+  #jspsych-target .sd-scale-head > div{
+    white-space: normal !important;  /* 手動の <br> も自動折返しも有効 */
+    word-break: normal !important;
+    line-height: 1.15 !important;
+    align-items: flex-end !important; /* 下ぞろえで整列 */
+  }
+</style>
+
 </head>
 <body>
 
