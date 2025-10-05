@@ -33,19 +33,15 @@ function showSendingScreen(msg){
   host.innerHTML = `
     <style>
       @keyframes spin { to { transform: rotate(360deg); } }
-      .send-wrap{
-        min-height: 70vh; display:flex; flex-direction:column;
-        align-items:center; justify-content:center; gap:16px;
-        font-size: 1.05rem; color:#111827; text-align:center;
-      }
-      .spinner{
-        width:38px; height:38px; border-radius:50%;
-        border:3px solid #cbd5e1; border-top-color:#4b5563;
-        animation: spin 0.9s linear infinite;
-      }
+      .send-wrap{ min-height:70vh; display:flex; flex-direction:column;
+                  align-items:center; justify-content:center; gap:16px;
+                  font-size:1.05rem; color:#111827; text-align:center; }
+      .spinner{ width:38px; height:38px; border-radius:50%;
+                border:3px solid #cbd5e1; border-top-color:#4b5563;
+                animation: spin .9s linear infinite; }
       .send-note{ color:#6b7280; font-size:.9rem; line-height:1.8; }
     </style>
-    <div class="send-wrap" id="send-wrap">
+    <div class="send-wrap">
       <div class="spinner" aria-label="送信中"></div>
       <div>${msg || 'データを送信中です…'}</div>
       <div class="send-note">通信が不安定な場合でも、自動で再送を続けます。<br>このままお待ちください。</div>
@@ -75,30 +71,30 @@ async function postOnce(payload, timeoutMs=15000){
   }
 }
 
-// 失敗時：ローカルに一時保存し、ページを開いている間は一定間隔で再送を続ける。
-// ページを閉じた後でも、次回アクセス時に自動再送（attemptResendPendingOnLoad）が働く。
 function queuePending(payload){
   try{ localStorage.setItem(QUEUE_KEY, JSON.stringify(payload)); }catch(e){}
 }
 
 function startAutoRetryLoop(payload, onSuccess){
-  // すぐ1回試す
   (async ()=>{
-    const ok = await postOnce(payload, 15000);
+    // まず即時1回
+    let ok = await postOnce(payload, 15000);
     if (ok){ localStorage.removeItem(QUEUE_KEY); onSuccess(); return; }
-    // 以降、15秒間隔で静かに再試行
+
+    // 以降15秒間隔で自動再試行
     const iv = setInterval(async ()=>{
-      const ok2 = await postOnce(payload, 15000);
-      if (ok2){
+      ok = await postOnce(payload, 15000);
+      if (ok){
         clearInterval(iv);
         localStorage.removeItem(QUEUE_KEY);
         onSuccess();
       }
     }, 15000);
-    // オンライン復帰イベントでも即座に1回試す
+
+    // オンライン復帰イベント時も即時トライ
     const onOnline = async ()=>{
-      const ok3 = await postOnce(payload, 15000);
-      if (ok3){
+      ok = await postOnce(payload, 15000);
+      if (ok){
         window.removeEventListener('online', onOnline);
         localStorage.removeItem(QUEUE_KEY);
         onSuccess();
@@ -109,18 +105,17 @@ function startAutoRetryLoop(payload, onSuccess){
 }
 
 // 再訪時に未送信があれば黙って再送（UIは出さない）
-async function attemptResendPendingOnLoad(){
+(async function attemptResendPendingOnLoad(){
   const raw = localStorage.getItem(QUEUE_KEY);
   if (!raw) return;
   let payload = null;
   try{ payload = JSON.parse(raw); }catch(e){}
   if (!payload) return;
-  // バックグラウンドで静かに再送
-  const ok = await postOnce(payload, 12000);
+  let ok = await postOnce(payload, 12000);
   if (ok){ localStorage.removeItem(QUEUE_KEY); return; }
-  // だめなら短時間ループで再試行
-  startAutoRetryLoop(payload, ()=>{ /* 成功しても何も表示しない */ });
-}
+  startAutoRetryLoop(payload, ()=>{ /* 成功しても画面はそのまま */ });
+})();
+
 attemptResendPendingOnLoad();
 
 
@@ -656,65 +651,71 @@ async function main(){
     on_finish:(d)=>{ d.participant_id = PID; d.block='demographics'; }
   });
 
-  // 最終自由記述（任意）
-  timeline.push({
-    type: 'survey-html-form',
-    preamble:'<h3>ご意見・ご感想（任意）</h3><p>実験全体を通して気づいたことがあればご記入ください。</p>',
-    html:`<textarea name="comment" rows="4" style="width:100%"></textarea>`,
-    button_label: '送信へ',
-    on_finish:(d)=>{ d.participant_id = PID; d.block='final_comment'; }
-  });
+// 最終自由記述（任意）→ この on_finish で送信→終了まで持っていく
+timeline.push({
+  type: 'survey-html-form',
+  preamble:'<h3>ご意見・ご感想（任意）</h3><p>実験全体を通して気づいたことがあればご記入ください。</p>',
+  html:`<textarea name="comment" rows="4" style="width:100%"></textarea>`,
+  button_label: '送信',   // ←「送信へ」から変更
+  on_finish: (d)=>{ 
+    d.participant_id = PID; 
+    d.block = 'final_comment';
 
-  // 完了画面（全画面解除して終了）
-  timeline.push({
-    type:'html-button-response',
-    stimulus:'<h2>これで終了です。ご協力ありがとうございました！</h2>',
-    choices:['完了'],
-    on_finish: () => { if (document.fullscreenElement) document.exitFullscreen?.(); }
-  });
+    // 送信中の待機画面（参加者は待つだけ）
+    showSendingScreen('データを送信中です…');
 
-  // jsPsych 初期化（Netlify POST つき）
-  jsPsych.init({
-    display_element: 'jspsych-target',
-    timeline: timeline,
-    on_finish: async function(){
-  // 送信中の待機画面（参加者は待つだけ）
-  showSendingScreen('データを送信中です…');
+    // 送信 payload（meta はあなたの追記分を踏襲）
+    const payload = {
+      id: PID,
+      when: new Date().toISOString(),
+      meta: {
+        site: location.host,
+        ver: "2025-10-04a",
+        ua: navigator.userAgent,
+        vp: { w: innerWidth, h: innerHeight },
+        stim_order: (typeof order !== 'undefined') ? order : null
+      },
+      data: JSON.parse(jsPsych.data.get().json())
+    };
 
-  // ペイロード（metaはあなたの追記分を踏襲）
-  const payload = {
-    id: PID,
-    when: new Date().toISOString(),
-    meta: {
-      site: location.host,
-      ver: "2025-10-04a",
-      ua: navigator.userAgent,
-      vp: { w: innerWidth, h: innerHeight },
-      // order は main() 内で定義済みなので参照可能
-      stim_order: (typeof order !== 'undefined') ? order : null
-    },
-    data: JSON.parse(jsPsych.data.get().json())
-  };
+    (async ()=>{
+      // まずは2回だけ即時試行（短時間で決まるケースを拾う）
+      let ok = await postOnce(payload, 15000);
+      if (!ok) ok = await postOnce(payload, 15000);
 
-  // まず1〜2回だけ即時試行（短時間で決まるケースを拾う）
-  let ok = await postOnce(payload, 15000);
-  if (!ok) ok = await postOnce(payload, 15000);
+      if (ok){
+        if (document.fullscreenElement) document.exitFullscreen?.();
+        jsPsych.endExperiment('データを送信しました。ご協力ありがとうございました。<br><br>このウィンドウを閉じて終了してください。');
+        return;
+      }
 
-  if (ok){
-    if (document.fullscreenElement) document.exitFullscreen?.();
-    jsPsych.endExperiment('データを送信しました。ご参加ありがとうございました。<br><br>このウィンドウを閉じて終了してください。');
-    return;
+      // 失敗：一時保存して自動再送を継続。数秒見せたら終了文言に切り替え
+      queuePending(payload);
+      startAutoRetryLoop(payload, ()=>{ /* 成功時も静かに完了済み */ });
+
+      setTimeout(()=>{
+        if (document.fullscreenElement) document.exitFullscreen?.();
+        jsPsych.endExperiment(
+          'データの送信手続きを継続しています（通信が回復すると自動で完了します）。<br>' +
+          'ご協力ありがとうございました。<br><br>このウィンドウを閉じて終了してください。'
+        );
+      }, 4000); // ← スピナーを少しだけ見せる
+    })();
   }
+});
 
-  // ここに来たら通信不安定：一時保存し、参加者には「送信中」のまま待ってもらいながら自動再試行
-  queuePending(payload);
-  startAutoRetryLoop(payload, ()=>{
+
+
+  // jsPsych 初期化（送信処理は自由記述の on_finish で実施済み）
+jsPsych.init({
+  display_element: 'jspsych-target',
+  timeline: timeline,
+  on_finish: function(){
+    // 念のため：通常終了時にフルスクリーン解除
     if (document.fullscreenElement) document.exitFullscreen?.();
-    jsPsych.endExperiment('データを送信しました。ご参加ありがとうございました。<br><br>このウィンドウを閉じて終了してください。');
-  });
-}
+  }
+});
 
-  });
 }
 
 main();
