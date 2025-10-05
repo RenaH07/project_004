@@ -538,6 +538,13 @@ async function main(){
       const payload = {
         id: PID,
         when: new Date().toISOString(),
+        meta: {
+        site: location.host,
+        ver: "2025-10-04a",                // 任意の実験版識別子
+        ua: navigator.userAgent,           // ブラウザUA（トラブル時の手掛かり）
+        vp: { w: innerWidth, h: innerHeight }, // 画面サイズ
+        stim_order: order                  // 本番で提示した刺激の並び
+      },
         data: JSON.parse(jsPsych.data.get().json())
       };
       try {
