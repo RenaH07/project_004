@@ -25,6 +25,105 @@ if (isMobile) {
   throw new Error("Mobile blocked");
 }
 
+/***** 送信ユーティリティ（参加者は待つだけ・自動再試行） *****/
+const QUEUE_KEY = 'pending_submission_v1';
+
+function showSendingScreen(msg){
+  const host = (jsPsych?.getDisplayElement?.() || document.body);
+  host.innerHTML = `
+    <style>
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .send-wrap{
+        min-height: 70vh; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:16px;
+        font-size: 1.05rem; color:#111827; text-align:center;
+      }
+      .spinner{
+        width:38px; height:38px; border-radius:50%;
+        border:3px solid #cbd5e1; border-top-color:#4b5563;
+        animation: spin 0.9s linear infinite;
+      }
+      .send-note{ color:#6b7280; font-size:.9rem; line-height:1.8; }
+    </style>
+    <div class="send-wrap" id="send-wrap">
+      <div class="spinner" aria-label="送信中"></div>
+      <div>${msg || 'データを送信中です…'}</div>
+      <div class="send-note">通信が不安定な場合でも、自動で再送を続けます。<br>このままお待ちください。</div>
+    </div>
+  `;
+}
+
+async function postOnce(payload, timeoutMs=15000){
+  const controller = new AbortController();
+  const t = setTimeout(()=>controller.abort(), timeoutMs);
+  try{
+    const res = await fetch("/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        "form-name": "experiment-data",
+        "data": JSON.stringify(payload)
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(t);
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    return true;
+  }catch(e){
+    clearTimeout(t);
+    return false;
+  }
+}
+
+// 失敗時：ローカルに一時保存し、ページを開いている間は一定間隔で再送を続ける。
+// ページを閉じた後でも、次回アクセス時に自動再送（attemptResendPendingOnLoad）が働く。
+function queuePending(payload){
+  try{ localStorage.setItem(QUEUE_KEY, JSON.stringify(payload)); }catch(e){}
+}
+
+function startAutoRetryLoop(payload, onSuccess){
+  // すぐ1回試す
+  (async ()=>{
+    const ok = await postOnce(payload, 15000);
+    if (ok){ localStorage.removeItem(QUEUE_KEY); onSuccess(); return; }
+    // 以降、15秒間隔で静かに再試行
+    const iv = setInterval(async ()=>{
+      const ok2 = await postOnce(payload, 15000);
+      if (ok2){
+        clearInterval(iv);
+        localStorage.removeItem(QUEUE_KEY);
+        onSuccess();
+      }
+    }, 15000);
+    // オンライン復帰イベントでも即座に1回試す
+    const onOnline = async ()=>{
+      const ok3 = await postOnce(payload, 15000);
+      if (ok3){
+        window.removeEventListener('online', onOnline);
+        localStorage.removeItem(QUEUE_KEY);
+        onSuccess();
+      }
+    };
+    window.addEventListener('online', onOnline);
+  })();
+}
+
+// 再訪時に未送信があれば黙って再送（UIは出さない）
+async function attemptResendPendingOnLoad(){
+  const raw = localStorage.getItem(QUEUE_KEY);
+  if (!raw) return;
+  let payload = null;
+  try{ payload = JSON.parse(raw); }catch(e){}
+  if (!payload) return;
+  // バックグラウンドで静かに再送
+  const ok = await postOnce(payload, 12000);
+  if (ok){ localStorage.removeItem(QUEUE_KEY); return; }
+  // だめなら短時間ループで再試行
+  startAutoRetryLoop(payload, ()=>{ /* 成功しても何も表示しない */ });
+}
+attemptResendPendingOnLoad();
+
+
 /***** 1) ユーティリティ／定数 *****/
 function pid(len = 10){
   const s='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -535,32 +634,42 @@ async function main(){
     display_element: 'jspsych-target',
     timeline: timeline,
     on_finish: async function(){
-      const payload = {
-        id: PID,
-        when: new Date().toISOString(),
-        meta: {
-        site: location.host,
-        ver: "2025-10-04a",                // 任意の実験版識別子
-        ua: navigator.userAgent,           // ブラウザUA（トラブル時の手掛かり）
-        vp: { w: innerWidth, h: innerHeight }, // 画面サイズ
-        stim_order: order                  // 本番で提示した刺激の並び
-      },
-        data: JSON.parse(jsPsych.data.get().json())
-      };
-      try {
-        await fetch("/", {
-          method:"POST",
-          headers:{ "Content-Type":"application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            "form-name":"experiment-data",
-            "data": JSON.stringify(payload)
-          })
-        });
-      } catch(e) {
-        console.warn("投稿をスキップ（ローカル環境かもしれません）:", e);
-      }
-      jsPsych.endExperiment('データを送信しました。ご参加ありがとうございました。');
-    }
+  // 送信中の待機画面（参加者は待つだけ）
+  showSendingScreen('データを送信中です…');
+
+  // ペイロード（metaはあなたの追記分を踏襲）
+  const payload = {
+    id: PID,
+    when: new Date().toISOString(),
+    meta: {
+      site: location.host,
+      ver: "2025-10-04a",
+      ua: navigator.userAgent,
+      vp: { w: innerWidth, h: innerHeight },
+      // order は main() 内で定義済みなので参照可能
+      stim_order: (typeof order !== 'undefined') ? order : null
+    },
+    data: JSON.parse(jsPsych.data.get().json())
+  };
+
+  // まず1〜2回だけ即時試行（短時間で決まるケースを拾う）
+  let ok = await postOnce(payload, 15000);
+  if (!ok) ok = await postOnce(payload, 15000);
+
+  if (ok){
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    jsPsych.endExperiment('データを送信しました。ご参加ありがとうございました。<br><br>このウィンドウを閉じて終了してください。');
+    return;
+  }
+
+  // ここに来たら通信不安定：一時保存し、参加者には「送信中」のまま待ってもらいながら自動再試行
+  queuePending(payload);
+  startAutoRetryLoop(payload, ()=>{
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    jsPsych.endExperiment('データを送信しました。ご参加ありがとうございました。<br><br>このウィンドウを閉じて終了してください。');
+  });
+}
+
   });
 }
 
