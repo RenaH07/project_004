@@ -170,14 +170,14 @@ function getSDLabels(){ return SCALE_LABELS_SD.slice(); }
 /***** 2) 質問定義（固定順・左＝ポジティブ） *****/
 // リッカート（3項目）※順序＝生物性→意図性→かわいい
 const QUESTIONS_LIKERT_BASE = [
-  { kind:'likert', name:'ANIMACY', label:'生き物のように感じましたか' },
-  { kind:'likert', name:'INTENT',  label:'目的をもって動いているように感じましたか' },
-  { kind:'likert', name:'KAWAII',  label:'かわいいと感じましたか' }
+  { kind:'likert', name:'ANIMACY', label:'生き物のように感じた' },
+  { kind:'likert', name:'INTENT',  label:'目的をもって動いているように感じた' },
+  { kind:'likert', name:'KAWAII',  label:'かわいいと感じた' }
 ];
 
 // SD（4項目）
 const QUESTIONS_SD = [
-  { kind:'sd', name:'VALENCE',  label:'快‐不快',     left:'快い',         right:'不快' },
+  { kind:'sd', name:'VALENCE',  label:'快‐不快',     left:'快',         right:'不快' },
   { kind:'sd', name:'APPROACH', label:'接近‐回避',   left:'近づきたい',   right:'避けたい' },
   { kind:'sd', name:'SMOOTH',   label:'ぎこちなさ', left:'洗練された',   right:'ぎこちない' },
   { kind:'sd', name:'PREDICT',  label:'予測性',       left:'予測しやすい', right:'予測しにくい' }
@@ -366,14 +366,14 @@ function makeSurveyPage(opts, file=null, index1=null){
   const html = `${css}
     <div class="page-wrap">
       <div class="blk">
-        <div class="section-title">以下の項目について、どの程度そう感じたかを選んでください。</div>
+        <div class="section-title">　</div>
         <div class="lm-wrap">
           ${likertHeader}
           ${likertRows}
         </div>
       </div>
       <div class="blk">
-        <div class="section-title">以下の対になった言葉について、あなたの印象に近い位置を選んでください。</div>
+        <div class="section-title">　</div>
         <div class="sd-wrap">
           ${sdHeader}
           ${sdRows}
@@ -384,7 +384,7 @@ function makeSurveyPage(opts, file=null, index1=null){
 
   return {
     type:'survey-html-form',
-    preamble:'<h3>直前のアニメーションの黒い丸について、あなたの印象に最も近い選択肢を選んでください。</h3>',
+    preamble:'<h3>直前のアニメーションの黒い丸について<br>あなたの印象に最も近い選択肢を選んでください。</h3>',
     html,
     button_label:'次へ',
 
