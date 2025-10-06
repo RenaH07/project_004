@@ -170,8 +170,8 @@ function getSDLabels(){ return SCALE_LABELS_SD.slice(); }
 /***** 2) 質問定義（固定順・左＝ポジティブ） *****/
 // リッカート（3項目）※順序＝生物性→意図性→かわいい
 const QUESTIONS_LIKERT_BASE = [
-  { kind:'likert', name:'ANIMACY', label:'生き物のように感じた' },
-  { kind:'likert', name:'INTENT',  label:'目的をもって動いているように感じた' },
+  { kind:'likert', name:'ANIMACY', label:'生き物であるかのように感じた' },
+  { kind:'likert', name:'INTENT',  label:'目的をもって動いているかのように感じた' },
   { kind:'likert', name:'KAWAII',  label:'かわいいと感じた' }
 ];
 
@@ -384,7 +384,7 @@ function makeSurveyPage(opts, file=null, index1=null){
 
   return {
     type:'survey-html-form',
-    preamble:'<h3>直前の動画の黒い丸についてあなたの印象に最も近い選択肢を選んでください。</h3>',
+    preamble:'<h3>直前の動画の「黒い丸」についてあなたの印象に最も近い選択肢を選んでください。</h3>',
     html,
     button_label:'次へ',
 
@@ -629,7 +629,7 @@ timeline.push({
   stimulus: `
     <h3>操作説明</h3>
     <p>今から短い動画が再生されます。
-    <p>再生が終わると、質問が表示されるので<br>動画に表示される黒い丸に対する印象について回答してください。</p>
+    <p>再生が終わると、質問が表示されます。<br>動画に表示される「黒い丸」に対する印象について回答してください。</p>
   `,
   choices: ['練習を始める'],
   // ★ 説明を読んでいる間に、練習2本を先読み
@@ -661,7 +661,7 @@ async function main(){
       <h3>本番開始</h3>
       <p>ここからが本番です。</p>
       <p>先ほどと同じように動画の再生が終わると、質問が表示されます。</p>
-      <p>動画に表示される黒い丸に対する印象について回答してください。</p>
+      <p>動画に表示される「黒い丸」に対する印象について回答してください。</p>
     `,
     choices: ['開始する']
   });
