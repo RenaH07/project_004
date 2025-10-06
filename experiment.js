@@ -384,7 +384,7 @@ function makeSurveyPage(opts, file=null, index1=null){
 
   return {
     type:'survey-html-form',
-    preamble:'<h3>直前のアニメーションの黒い丸について<br>あなたの印象に最も近い選択肢を選んでください。</h3>',
+    preamble:'<h3>直前の動画の黒い丸についてあなたの印象に最も近い選択肢を選んでください。</h3>',
     html,
     button_label:'次へ',
 
