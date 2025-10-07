@@ -179,8 +179,8 @@ const QUESTIONS_LIKERT_BASE = [
 const QUESTIONS_SD = [
   { kind:'sd', name:'VALENCE',  label:'快‐不快',     left:'快',         right:'不快' },
   { kind:'sd', name:'APPROACH', label:'接近‐回避',   left:'近づきたい',   right:'避けたい' },
-  { kind:'sd', name:'SMOOTH',   label:'ぎこちなさ', left:'洗練された',   right:'ぎこちない' },
-  { kind:'sd', name:'PREDICT',  label:'予測性',       left:'予測しやすい', right:'予測しにくい' }
+  { kind:'sd', name:'WARMTH',   label:'温かさ',      left:'親しみやすい', right:'親しみにくい' },
+  { kind:'sd', name:'SMOOTH',   label:'ぎこちなさ', left:'洗練された',   right:'ぎこちない' }
 ];
 
 // IMCを“しれっと”行として差し込む（本番の最後のページだけ）
