@@ -170,8 +170,8 @@ function getSDLabels(){ return SCALE_LABELS_SD.slice(); }
 /***** 2) 質問定義（固定順・左＝ポジティブ） *****/
 // リッカート（3項目）※順序＝生物性→意図性→かわいい
 const QUESTIONS_LIKERT_BASE = [
-  { kind:'likert', name:'ANIMACY', label:'生き物であるかのように感じた' },
-  { kind:'likert', name:'INTENT',  label:'目的をもって動いているかのように感じた' },
+  { kind:'likert', name:'ANIMACY', label:'生き物のように感じた' },
+  { kind:'likert', name:'INTENT',  label:'目的をもって動いているように感じた' },
   { kind:'likert', name:'KAWAII',  label:'かわいいと感じた' }
 ];
 
